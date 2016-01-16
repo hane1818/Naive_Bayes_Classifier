@@ -16,9 +16,11 @@ class Classifier:
         with open(self.training_file, 'rt') as fin:
             cin = csv.reader(fin)
             self.origin_data = np.array([row for row in cin])
+        return self
 
     def separate_data(self):
         self.label_name = np.array(self.origin_data[0][-1])
         self.feature_name = np.array(self.origin_data[0][0:-1])
         self.labels = np.array([i[-1] for i in self.origin_data[1:-1]])
         self.features = np.array([row[0:-1] for row in self.origin_data[1:-1]], dtype='float')
+        return self
