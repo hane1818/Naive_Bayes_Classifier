@@ -9,6 +9,8 @@ class Classifier:
         self.feature_name = []
         self.labels = []
         self.label_name = ""
+        self.model = []
+        self.test_model = []    # use for training more & more times
 
     def load_file(self, filename):
         with open(filename, 'rt') as fin:
