@@ -3,18 +3,19 @@ import numpy as np
 
 
 class Classifier:
-    def __init__(self, training_file):
-        self.training_file = training_file
+    def __init__(self):
+        self.training_file = ""
         self.origin_data = []
         self.features = []
         self.feature_name = []
         self.labels = []
         self.label_name = ""
 
-    def load_data(self):
+    def load_data(self, filename):
+        self.training_file = filename
         with open(self.training_file, 'rt') as fin:
             cin = csv.reader(fin)
-            self.origin_data = [row for row in cin]
+            self.origin_data = np.array([row for row in cin])
 
     def separate_data(self):
         self.label_name = np.array(self.origin_data[0][-1])
