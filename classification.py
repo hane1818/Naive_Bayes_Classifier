@@ -4,19 +4,20 @@ import numpy as np
 
 class Classifier:
     def __init__(self):
-        self.training_file = ""
         self.origin_data = []
         self.features = []
         self.feature_name = []
         self.labels = []
         self.label_name = ""
 
-    def load_data(self, filename):
-        self.training_file = filename
-        with open(self.training_file, 'rt') as fin:
+    def load_file(self, filename):
+        with open(filename, 'rt') as fin:
             cin = csv.reader(fin)
             self.origin_data = np.array([row for row in cin])
         return self
+
+    def load_data(self, datasets):
+        self.origin_data = np.array(datasets)
 
     def separate_data(self):
         try:
@@ -27,3 +28,6 @@ class Classifier:
         except IndexError:
             raise ValueError("no data in classifier, use load_data() to load a data set.")
         return self
+
+    def train(self):
+        pass
