@@ -19,8 +19,11 @@ class Classifier:
         return self
 
     def separate_data(self):
-        self.label_name = np.array(self.origin_data[0][-1])
-        self.feature_name = np.array(self.origin_data[0][0:-1])
-        self.labels = np.array([i[-1] for i in self.origin_data[1:-1]])
-        self.features = np.array([row[0:-1] for row in self.origin_data[1:-1]], dtype='float')
+        try:
+            self.label_name = np.array(self.origin_data[0][-1])
+            self.feature_name = np.array(self.origin_data[0][0:-1])
+            self.labels = np.array([i[-1] for i in self.origin_data[1:-1]])
+            self.features = np.array([row[0:-1] for row in self.origin_data[1:-1]], dtype='float')
+        except IndexError:
+            raise ValueError("no data in classifier, use load_data() to load a data set.")
         return self
