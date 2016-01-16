@@ -16,11 +16,11 @@ class Classifier:
     def load_file(self, filename):
         with open(filename, 'rt') as fin:
             cin = csv.reader(fin)
-            self.origin_data =[row for row in cin]
+            self.origin_data = [row for row in cin]
         return self
 
     def load_data(self, datasets):
-        self.origin_data = np.array(datasets)
+        self.origin_data = datasets
 
     def separate_data(self):
         try:
@@ -72,3 +72,12 @@ class Classifier:
             self.test_model = model
 
         return self
+
+
+def main():
+    nb = Classifier()
+    nb.load_file('only_data.csv')
+
+
+if __name__ == '__main__':
+    main()
