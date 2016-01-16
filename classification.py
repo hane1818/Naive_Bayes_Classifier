@@ -104,8 +104,11 @@ class Classifier:
                 correct += 1
         accuracy = correct/len(actual)
         if accuracy > self.accuracy:
+            self.accuracy = accuracy
             self.model = self.test_model if self.test_model else self.model
         self.test_model = {}
+
+        return self
 
     def fit(self, dataset):
         if not self.model:
@@ -142,16 +145,13 @@ class Classifier:
 
         return result_list
 
+
 def calc_probability(x, mean, stdev):
     exponent = math.exp(-(math.pow(x-mean, 2)/(2*math.pow(stdev, 2))))
     return (1 / (math.sqrt(2*math.pi) * stdev)) * exponent
 
 
 def main():
-    nb = Classifier()
-    nb.load_file('only_data.csv').separate_data().train().test([[0.1, 0.2, 0.5, 0, 0.8, "High"], [0, 0, 0, 0, 0, 'very_low']])
-    print(nb.model, nb.test_model)
-    print(len(nb.features), len(nb.origin_data))
-    print(nb.fit( [0,0,0,0,0]))
+    pass
 if __name__ == '__main__':
     main()
