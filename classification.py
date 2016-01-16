@@ -2,38 +2,31 @@ import csv
 import math
 import operator
 import functools
+import random
 
 
 class Classifier:
     def __init__(self):
         self.origin_data = []
         self.features = []
-        self.feature_name = []
+        self.feature_num = 0
         self.labels = []
-        self.label_name = []    # maybe it
+        self.label_num = 0    # maybe it
         self.class_label = set()
         self.model = {}
         self.test_model = {}    # use for training more & more times
         self.accuracy = 0
 
-    def load_file(self, filename):
-        with open(filename, 'rt') as fin:
-            cin = csv.reader(fin)
-            self.origin_data = [row for row in cin]
-        return self
-
     def load_data(self, datasets):
         self.origin_data = datasets
+        return self
 
     def separate_data(self, label_num=1):
         try:
-            self.label_name = self.origin_data[0][-label_num:]
-            self.feature_name = self.origin_data[0][0:-label_num]
+            self.label_num = label_num
+            self.feature_num = len(self.origin_data[0][0:-label_num])
             self.labels = [i[-label_num] for i in self.origin_data[1:]]
             self.features = [row[0:-label_num] for row in self.origin_data[1:]]
-            for i, data in enumerate(self.features):
-                for j, d in enumerate(data):
-                    self.features[i][j] = float(d)
             self.class_label = set(self.labels)
         except IndexError:
             raise ValueError("no data in classifier, use load_data() to load a data set.")
@@ -66,7 +59,7 @@ class Classifier:
         model = {}
         for label in self.class_label:
             model[label] = []
-            for i in range(len(self.feature_name)):
+            for i in range(self.feature_num):
                 model[label].append([data[i] for data in data_model[label][1]])
                 model[label][i] = (mean(model[label][i]), stdev(model[label][i]))
             model[label] = (data_model[label][0], model[label])
@@ -82,13 +75,13 @@ class Classifier:
         if not self.model:
             raise ValueError("need to train data before test")
         elif type(dataset) is not list or \
-                type(dataset[0]) is not list and len(dataset) != len(self.feature_name + self.label_name) or \
-                type(dataset[0]) is list and len(dataset[0]) != len(self.feature_name + self.label_name) :
+                type(dataset[0]) is not list and len(dataset) != self.feature_num + self.label_num or \
+                type(dataset[0]) is list and len(dataset[0]) != self.feature_num + self.label_num:
             raise ValueError("invalid test data")
 
         feature = []
         actual = []
-        label_num = len(self.label_name)
+        label_num = self.label_num
         if type(dataset) is list and type(dataset[0]) is not list:
             feature.append(dataset[0:-label_num])
             actual.append(dataset[-label_num:])
@@ -114,8 +107,8 @@ class Classifier:
         if not self.model:
             raise ValueError("need to train data before test")
         elif type(dataset) is not list or \
-                type(dataset[0]) is not list and len(dataset) != len(self.feature_name) or \
-                type(dataset[0]) is list and len(dataset[0]) != len(self.feature_name):
+                type(dataset[0]) is not list and len(dataset) != self.feature_num or \
+                type(dataset[0]) is list and len(dataset[0]) != self.feature_num:
             raise ValueError("invalid test data")
         feature = []
         if type(dataset) is list and type(dataset[0]) is not list:
@@ -151,7 +144,51 @@ def calc_probability(x, mean, stdev):
     return (1 / (math.sqrt(2*math.pi) * stdev)) * exponent
 
 
+def bootstrap(dataset, split_ratio, times):
+    train_size = int(len(dataset) * split_ratio)
+    test_size = len(dataset) - train_size
+    for i in range(times):
+        train_set = []
+        test_set = []
+        while len(train_set) < train_size:
+            index = random.randrange(len(dataset))
+            train_set.append(dataset[index])
+        while len(test_set) < test_size:
+            index = random.randrange(len(dataset))
+            test_set.append(dataset[index])
+        yield train_set, test_set
+
+def k_fold(dataset, fold):
+    test_size = len(dataset) // fold
+    start = 0
+    end = test_size
+    for i in range(fold):
+        yield dataset[0:start]+dataset[end:-1], dataset[start:end]
+        start += test_size
+        end += test_size
+
 def main():
-    pass
+    nb = Classifier()
+    # load data
+    with open('data.csv', 'r') as fin:
+        cin = csv.reader(fin)
+        dataset = [row for row in cin]
+
+    # preprocessing
+    title = dataset.pop(0)
+    for i, data in enumerate(dataset):
+        for j, d in enumerate(data):
+            try:
+                dataset[i][j] = float(d)
+            except ValueError:
+                pass
+
+    # training & testing
+    for trainset, testset in bootstrap(dataset, 0.8, len(dataset)):
+        nb.load_data(trainset).separate_data().train()
+        nb.test(testset)
+        print(nb.accuracy)
+
+
 if __name__ == '__main__':
     main()
