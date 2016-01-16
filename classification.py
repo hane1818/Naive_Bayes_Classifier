@@ -15,7 +15,8 @@ class Classifier:
         self.class_label = set()
         self.model = {}
         self.test_model = {}    # use for training more & more times
-        self.accuracy = 0
+        self.train_accuracy = 0
+        self.test_accuracy = 0
 
     def load_data(self, datasets):
         self.origin_data = datasets
@@ -96,12 +97,13 @@ class Classifier:
             if result[i] == x:
                 correct += 1
         accuracy = correct/len(actual)
-        if accuracy > self.accuracy:
-            self.accuracy = accuracy
+        self.test_accuracy = accuracy
+        if accuracy > self.train_accuracy:
+            self.train_accuracy = accuracy
             self.model = self.test_model if self.test_model else self.model
         self.test_model = {}
 
-        return self
+        return accuracy
 
     def fit(self, dataset):
         if not self.model:
@@ -170,25 +172,60 @@ def k_fold(dataset, fold):
 def main():
     nb = Classifier()
     # load data
-    with open('data.csv', 'r') as fin:
+    with open('train_data.csv', 'r') as fin:
         cin = csv.reader(fin)
-        dataset = [row for row in cin]
+        train_data = [row for row in cin]
+
+    with open('test_data.csv', 'r') as fin:
+        cin = csv.reader(fin)
+        test_data = [row for row in cin]
 
     # preprocessing
-    title = dataset.pop(0)
-    for i, data in enumerate(dataset):
+    title = train_data.pop(0)
+    for i, data in enumerate(train_data):
         for j, d in enumerate(data):
             try:
-                dataset[i][j] = float(d)
+                train_data[i][j] = float(d)
+            except ValueError:
+                pass
+    for i, data in enumerate(test_data):
+        for j, d in enumerate(data):
+            try:
+                test_data[i][j] = float(d)
             except ValueError:
                 pass
 
     # training & testing
-    for trainset, testset in bootstrap(dataset, 0.8, len(dataset)):
+    print("{:30} : {}".format("Number of training data sets", len(train_data)),
+          "{:30} : {}".format("Number of testing data sets", len(test_data)), sep="\n")
+    print("\n==========================================\n")
+    nb.load_data(train_data).separate_data().train()
+    nb.test(test_data)
+    print("Use training data sets training: \n",
+          "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("\n==========================================\n")
+    for trainset, testset in bootstrap(train_data, 0.673, len(train_data)):
         nb.load_data(trainset).separate_data().train()
         nb.test(testset)
-        print(nb.accuracy)
-
+    nb.test(test_data)
+    print("After bootstrap evaluation: \n",
+          "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("\n==========================================\n")
+    for trainset, testset in k_fold(train_data, len(train_data)):
+        nb.load_data(trainset).separate_data().train()
+        nb.test(testset)
+    nb.test(test_data)
+    print("After k-fold evaluation: \n",
+          "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("\n==========================================\n")
+    nb.load_data(test_data).separate_data().train()
+    nb.test(test_data)
+    print("After training via testing data sets: \n"
+          "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("\n==========================================\n")
+    nb.test(train_data)
+    print("Use training data set for test : \n"
+          "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
 
 if __name__ == '__main__':
     main()
