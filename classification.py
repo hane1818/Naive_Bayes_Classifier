@@ -17,6 +17,10 @@ class Classifier:
         self.test_model = {}    # use for training more & more times
         self.train_accuracy = 0
         self.test_accuracy = 0
+        self.confusion_matrix = {}
+        self.precision = {}
+        self.recall = {}
+        self.f_measure = {}
 
     def load_data(self, datasets):
         self.origin_data = datasets
@@ -92,15 +96,38 @@ class Classifier:
                 actual.append(data[-1])
 
         result = self.fit(feature)
+        confusion_matrix = {}
+        for key in self.class_label:
+            confusion_matrix[key] = {'tp': 0, 'tf': 0, 'fn': 0, 'fp': 0}
         correct = 0
         for i, x in enumerate(actual):
             if result[i] == x:
+                confusion_matrix[x]['tp'] += 1
                 correct += 1
+            else:
+                confusion_matrix[x]['fn'] += 1
+                confusion_matrix[result[i]]['fp'] += 1
+        for key in self.class_label:
+            confusion_matrix[key]['tn'] = len(actual) - (confusion_matrix[key]['tp']+confusion_matrix[key]['fn']+confusion_matrix[key]['fp'])
+            try:
+                self.precision[key] = confusion_matrix[key]['tp']/(confusion_matrix[key]['tp']+confusion_matrix[key]['fp'])
+            except ZeroDivisionError:
+                self.precision[key] = 0
+            try:
+                self.recall[key] = confusion_matrix[key]['tp']/(confusion_matrix[key]['tp']+confusion_matrix[key]['fn'])
+            except ZeroDivisionError:
+                self.recall[key] = 0
+            try:
+                self.f_measure[key] = (2*self.precision[key]*self.recall[key])/(self.precision[key]+self.recall[key])
+            except ZeroDivisionError:
+                self.f_measure[key] = 0
+        self.confusion_matrix = confusion_matrix
+
         accuracy = correct/len(actual)
-        self.test_accuracy = accuracy
-        if accuracy > self.train_accuracy:
+        if accuracy > self.train_accuracy or accuracy == self.train_accuracy and accuracy > self.test_accuracy:
             self.train_accuracy = accuracy
             self.model = self.test_model if self.test_model else self.model
+        self.test_accuracy = accuracy
         self.test_model = {}
 
         return accuracy
@@ -203,6 +230,13 @@ def main():
     nb.test(test_data)
     print("Use training data sets training: \n",
           "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("------------------------------------------")
+    for key in nb.class_label:
+        print("Class: {}".format(key))
+        print("\tConfusion Matrix=>",
+              "\tTP : {}, FP : {}, FN : {}, TN : {}".format(nb.confusion_matrix[key]['tp'], nb.confusion_matrix[key]['fp'],
+                                                            nb.confusion_matrix[key]['fn'], nb.confusion_matrix[key]['tn']))
+        print("\tPrecision : {:.1f}% Recall : {:.1f}% F-Measure : {:.1f}%".format(nb.precision[key]*100, nb.recall[key]*100, nb.f_measure[key]*100))
     print("\n==========================================\n")
     for trainset, testset in bootstrap(train_data, 0.673, len(train_data)):
         nb.load_data(trainset).separate_data().train()
@@ -210,6 +244,13 @@ def main():
     nb.test(test_data)
     print("After bootstrap evaluation: \n",
           "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("------------------------------------------")
+    for key in nb.class_label:
+        print("Class: {}".format(key))
+        print("\tConfusion Matrix=>",
+              "\tTP : {}, FP : {}, FN : {}, TN : {}".format(nb.confusion_matrix[key]['tp'], nb.confusion_matrix[key]['fp'],
+                                                            nb.confusion_matrix[key]['fn'], nb.confusion_matrix[key]['tn']))
+        print("\tPrecision : {:.1f}% Recall : {:.1f}% F-Measure : {:.1f}%".format(nb.precision[key]*100, nb.recall[key]*100, nb.f_measure[key]*100))
     print("\n==========================================\n")
     for trainset, testset in k_fold(train_data, len(train_data)):
         nb.load_data(trainset).separate_data().train()
@@ -217,15 +258,37 @@ def main():
     nb.test(test_data)
     print("After k-fold evaluation: \n",
           "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("------------------------------------------")
+    for key in nb.class_label:
+        print("Class: {}".format(key))
+        print("\tConfusion Matrix=>",
+              "\tTP : {}, FP : {}, FN : {}, TN : {}".format(nb.confusion_matrix[key]['tp'], nb.confusion_matrix[key]['fp'],
+                                                            nb.confusion_matrix[key]['fn'], nb.confusion_matrix[key]['tn']))
+        print("\tPrecision : {:.1f}% Recall : {:.1f}% F-Measure : {:.1f}%".format(nb.precision[key]*100, nb.recall[key]*100, nb.f_measure[key]*100))
     print("\n==========================================\n")
     nb.load_data(test_data).separate_data().train()
     nb.test(test_data)
     print("After training via testing data sets: \n"
           "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("------------------------------------------")
+    for key in nb.class_label:
+        print("Class: {}".format(key))
+        print("\tConfusion Matrix=>",
+              "\tTP : {}, FP : {}, FN : {}, TN : {}".format(nb.confusion_matrix[key]['tp'], nb.confusion_matrix[key]['fp'],
+                                                            nb.confusion_matrix[key]['fn'], nb.confusion_matrix[key]['tn']))
+        print("\tPrecision : {:.1f}% Recall : {:.1f}% F-Measure : {:.1f}%".format(nb.precision[key]*100, nb.recall[key]*100, nb.f_measure[key]*100))
     print("\n==========================================\n")
     nb.test(train_data)
     print("Use training data set for test : \n"
           "\tTraining accuracy\t= {:.2f}%\n\tTesting accuracy\t= {:.2f}%".format(nb.train_accuracy*100, nb.test_accuracy*100))
+    print("------------------------------------------")
+    for key in nb.class_label:
+        print("Class: {}".format(key))
+        print("\tConfusion Matrix=>",
+              "\tTP : {}, FP : {}, FN : {}, TN : {}".format(nb.confusion_matrix[key]['tp'], nb.confusion_matrix[key]['fp'],
+                                                            nb.confusion_matrix[key]['fn'], nb.confusion_matrix[key]['tn']))
+        print("\tPrecision : {:.1f}% Recall : {:.1f}% F-Measure : {:.1f}%".format(nb.precision[key]*100, nb.recall[key]*100, nb.f_measure[key]*100))
+
 
 if __name__ == '__main__':
     main()
